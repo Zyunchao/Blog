@@ -17,7 +17,8 @@
 ## 正文开始
 
 在现代前端开发中，我想听到最多的应该是工程化、模块化、组件化这几个概念了吧。<br>
-或许你不能流畅的描述什么是工程化、模块化、组件化。但是，你一定用到过。
+或许你不能流畅的描述什么是工程化、模块化、组件化。<br>
+但是，你一定用到过。
 
 你肯定用到过如下指令：
 
@@ -144,3 +145,182 @@ import { log } from "@/utils";
 就不再逐一分析，重点还是放到 **CommonJs** 和 **ES6 Modules** 中，因为这两个是目前用的最多的。
 
 ## CommonJs
+
+### 1. 概述
+
+随着 Javasript 应用进军服务器端，业界急需一种标准的模块化解决方案，于是，CommonJS 应运而生。这是一种被广泛使用的 Javascript 模块化规范，大家最熟悉的 Node.js 应用中就是采用这个规范。
+
+在 Node.js 模块系统中，每个文件都被视为一个独立的模块。模块有自己的作用域，一个模块内部所有的变量、函数、类 都是私有的，模块之间不能直接访问模块内部。**在服务器端，模块的加载是运行时同步加载的；在浏览器端，模块需要提前编译打包处理。**
+
+### 2. 基本语法
+
+- 暴露模块：
+
+  - `exports.xxx = value`
+  - `module.exports = value`
+
+- 导入模块：
+  - `require(xxx)`
+    - 如果是第三方模块，xxx 为模块名；
+    - 如果是自定义模块，xxx 为模块文件路径；
+
+### 3. 特点
+
+- 所有代码都运行在模块作用域，不会污染全局作用域。
+- 模块可以多次加载，但是只会在第一次加载时运行一次，然后运行结果就被缓存了，以后再加载，就直接读取缓存结果。要想让模块再次运行，必须清除缓存。
+- 模块加载的顺序，按照其在代码中出现的顺序。
+
+### 4. 分析
+
+好，我们大致了解了下 CommonJs，现在让我们一步步分析
+
+#### 4.1 暴露模块
+
+##### module 对象
+
+已知在 node 中，每个文件都是一个独立的模块，那么，这个 “模块” 到底是什么呢？
+nodejs 官网告诉我们：在每个模块中都有一个名为 module 的自由变量是对表示当前模块的对象的引用。
+
+现在，新建一个 app.js 文件，在里面打印下 module
+
+```javascript
+console.log(module);
+
+node app.js
+```
+
+![logModule](../img/module/logModuleObj.png)
+
+顺利的话，你应该可以看到类似的输出，没错，module 是一个可访问的对象。
+而这个对象，就是代表了当前文件(模块)的引用。<br>
+现在知道 commonjs 中的模块是什么了吧。
+
+##### module 对象的属性
+
+- **id：** 模块的标识符。 通常是完全解析后的文件名。
+- **exports：** module.exports 对象由 Module 系统创建
+
+  > **exports 属性是重中之重，这个属性是对外的接口，在外部加载模块时，其实加载的是这个模块的 module.exports 属性。我们在暴露属性时，也是通过将属性挂载到 module.exports 上面进行暴露操作的。**
+
+- **parent：** 标识最先引用该模块的模块。
+- **filename：** 模块的完全解析后的文件名。
+- **loaded：** 模块是否已经加载完成，或正在加载中。
+- **children：** 被该模块引用的模块对象。
+- **paths：** 模块的搜索路径。
+
+##### module.exports && exports
+
+在暴露模块时，我们有两种方式来将属性暴露出去：**module.exports 和 exports**
+
+> exports 是一个对于 module.exports 的更简短的引用形式。
+> exports 变量是在模块的文件级作用域内可用的，且在模块执行之前赋值给 module.exports。
+
+**实际上：**
+一个模块最终暴露的是 module 整个对象，而在引用时，引用的是 module 对象的 exports 属性，**module.exports 始终作为一个模块的输出接口**，以供外部访问内部的变量。
+
+在一个模块作用域中，还有一个 exports 属性，与 module.exports 属性是同一个引用，指向同一个数据，使用 `exports.xxx` 的方式，可以将对应的属性挂载到 module.exports 属性上，从而达到暴露属性的目的，如下所示：
+
+```javascript
+// module1.js
+
+person = {
+  name: "Jack",
+  age: 18,
+  sex: "man"
+};
+
+function pointPerson() {
+  console.log("point person at module1.js：", person);
+}
+
+exports.person = person;
+module.exports.pointPerson = pointPerson;
+
+console.log("module.exports === exports：", module.exports === exports); // true
+console.log("module1：", module);
+```
+
+![moduleExports.png](../img/module/moduleExports.png)
+
+> 可以看到 exports 与 module.exports 是同一个引用；
+>
+> 无论使用 **exports** 还是使用 **module.exports** 都挂载到了 module 下面，也会在将来暴露出去；
+
+如果我们将 module.exports 或者 exports 的引用改变了呢？
+
+1. 我们先将 exports 的引用改变：
+
+```javascript
+// module1.js
+
+person = {
+  name: "Jack",
+  age: 18,
+  sex: "man"
+};
+
+function pointPerson() {
+  console.log("point person at module1.js：", person);
+}
+
+exports.person = person;
+module.exports.pointPerson = pointPerson;
+
+console.log("module.exports === exports：", module.exports === exports); // true
+// console.log('module1：', module);
+
+exports = { index: 1 };
+exports.a = "aaa";
+console.log("module.exports === exports：", module.exports === exports); // false
+
+console.log("module1：", module);
+```
+
+![resetExports.png](../img/module/resetExports.png)
+
+> 承接未更改 exports 引用，对比发现，exports 不再和 moudle.exports 全等，给 exports 添加的属性也没有被添加到 module.exports 上面；
+>
+> 由于**module.exports 始终作为一个模块的输出接口**，当 exports 与 module.exports 发生断链后，再往 exports 上面添加属性，将不再被暴露出去；
+
+2. 尝试改变 module.exports 的引用：
+
+```javascript
+// module1.js
+
+module.exports = {
+  count: 123
+};
+
+console.log("module.exports === exports：", module.exports === exports); // false
+console.log("module1：", module);
+```
+
+![resetMEx.png](../img/module/resetMEx.png)
+
+> 同样的，exports 与 module.exports 不再全等；在这一步的情况下，exports 还指向旧的 moudle.exports 指向的对象，并未自动的随着 module.exports 的改变而改变；
+>
+> 区别于改变 exports 的引用，直接改变 module.exports 的引用是真实有效的；最终暴露出去的接口，始终取决于 module.exports 的指向。
+
+如果要改变 module.exports 的引用，大可将 exports 的引用改成同一个引用，如下：
+
+```javascript
+// module1.js
+
+module.exports = exports = {
+  count: 123
+};
+
+console.log("module.exports === exports：", module.exports === exports); // true
+```
+
+##### 小结
+
+1）在 node 中，每个文件都是独立的模块；
+2）在每个模块中，都有一个名为 module 的自由变量，用来表示当前模块的引用；
+3）module 对象下面的 exports 属性是最终引用的关键属性
+4）暴露模块有两种方式，module.exports && exports
+
+- exports 是 module.exports 的简写
+- 它们两个在最初时指向同一个地址
+- 改变其中任意一个，都会是 exports 和 moudle.exports 断链
+- 最终暴露出去的接口，完全取决于 module.exports 属性

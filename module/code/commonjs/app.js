@@ -20,18 +20,20 @@
  * 
  */
 
- const m1 = require('./modules/module1')
+const m1 = require('./modules/module1')
 //  clearCache('./modules/module1')
- const m2 = require('./modules/module1')
+const m2 = require('./modules/module2')
 
- m1.person.name = 'Lyy'
+m1.person.name = 'Lyy'
 
- console.log('m1：', m1);
- console.log('m2：', m2);
- console.log(m2 === m1);
+//  console.log('m1：', m1);
+//  console.log('m2：', m2);
+//  console.log(m2 === m1);
+
+console.log(module);
 
 
- function clearCache(path) {
-     path = require.resolve(path)
-     delete require.cache[path]
- }
+function clearCache(path) {
+    path = require.resolve(path)
+    delete require.cache[path]
+}
