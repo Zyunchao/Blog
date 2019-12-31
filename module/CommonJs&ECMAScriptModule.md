@@ -1,4 +1,4 @@
-# JavaScript 的模块化
+# 熟悉而陌生的模块化
 
 ![zhuantou](../img/module/zhuantou.jpg)
 
@@ -6,16 +6,18 @@
 
 本文主要内容是用来分析 **CommonJs 规范** 和 **ES6Moudle** 两个模块化方式的，对于其他的模块化方式本文未做分析。
 
-在本文，希望你能够收获到：
+在本文，你能够收获到：
 
 - <a href="#project">前端工程化的概念</a>
 - <a href="#module">模块化的概念、优点</a>
 - 系统的了解 CommonJs 规范
   - <a href="#moduleObj">CommonJs 模块的本质</a>
-  - <a href="#exportsModule">暴露模块的机制</a>
-  - <a href="#requireModule">加载模块的机制</a>
+  - <a href="#exportsModule">暴露模块的方式与机制</a>
+  - <a href="#requireModule">加载模块的方式与机制</a>
 - 系统的了解 ECMAScript Module
 - 两者的对比
+
+耐得住寂寞，才能守得住繁华。
 
 ## 正文开始
 
@@ -320,10 +322,99 @@ console.log("module.exports === exports：", module.exports === exports); // tru
 
 #### <a name="requireModule" style="color:#000;">4.3 加载模块</a>
 
-在进一步了解模块的加载机制前，我们需要先了解下模块的作用域。 <br>
-在模块作用域中，有若干个 node 给我们预置的变量，其中就包括前面说的 module 对象、exports 引用，除了这两个，还有其他的变量或方法供我们使用：
+在 node 中，加载模块使用的是 require 方法，**这个方法被内置于 node 模块作用域中**，和 module 及 exports 一样，可以直接拿来使用。
 
-- \_\_dirname
+require 在 node 官方给出的解释是这样的：
+
+> 用于引入模块、JSON、或本地文件。 可以从 node_modules 引入模块。 可以使用相对路径（例如 ./、 ./foo、 ./bar/baz、 ../foo）引入本地模块或 JSON 文件，路径会根据 \_\_dirname 定义的目录名或当前工作目录进行处理。
+
+```javascript
+// 引入本地模块：
+const myLocalModule = require("./path/myLocalModule");
+
+// 引入 JSON 文件：
+const jsonData = require("./path/filename.json");
+
+// 引入 node_modules 模块或 Node.js 内置模块：
+const crypto = require("crypto");
+```
+
+**require 同步的读入并执行一个 js 文件，并返回这个 js 模块的 module.exports 属性**，如果 js 文件并没有 exports 任何接口，那么它的 module.exports 就是一个空对象，require 返回的也将是这个空对象
+
+require 还可以引入 json 文件，返回值就是 json 文件内的 json 数据
+
+**上代码：**
+
+```javascript
+// module2.js
+console.log("module2.js start：", new Date().getTime());
+const person = {
+  name: "Jack",
+  age: 18,
+  sex: "man"
+};
+
+exports.person = person;
+// 暴露出去了一个 quote 变量，使它引用了当前模块的 module.exports 属性
+exports.quote = module.exports;
+console.log("module2.js end：", new Date().getTime());
+
+// app.js
+console.log("app.js start：", new Date().getTime());
+const m2 = require("./modules/module2");
+
+console.log("m2：", m2);
+console.log("m2.quote：", m2.quote);
+console.log("m2.quote === m2：", m2.quote === m2); // true
+console.log("app.js end：", new Date().getTime());
+```
+
+**result：** <br>
+![execute](../img/module/executeStep.png)
+
+##### 解析加载流程
+
+1）在 app.js 开始部分我们打印了一个开始的时间戳，最开始输出的也是这一个
+2）代码遇到 require，读入并执行 module2.js
+3）在 module2.js 中打印了 module2 开始的时间戳
+4）在 module2 中，暴露了一个 person 对象，及一个 module.exports 的引用
+5）module2.js 执行完，输出最后一条语句的时间戳
+6）执行流返回 app.js，定义的 m2 变量接收 require() 调用的返回值
+7）输出 m2 及 m2.quote 属性
+8）发现 m2 和 m2.quote 是相等呢，那么是不是可以证明 require 返回的就是 **模块下的 module.exports 属性呢**
+9）最后输出 app.js 执行完毕的时间戳，其实我们在上面就已经能看出，在执行完 module2.js 后才返回继续执行 app.js，是不是就已经证明了 **require() 是同步读入并执行的**呢。
+
+##### 加载缓存
+
+既然 require 会执行 js 文件，如果我多次加载同一模块，是否会执行多次这个 js 文件呢。<br>
+我们来试一下：
+
+```javascript
+// module2.js 依旧保持上一状态
+
+// app.js
+const m2 = require("./modules/module2");
+console.log("第一次加载 module2", new Date().getTime());
+
+const m3 = require("./modules/module2");
+console.log("第二次加载 module2", new Date().getTime());
+
+const m4 = require("./modules/module2");
+console.log("第三次加载 module2", new Date().getTime());
+```
+
+result：<br>
+![repeatedly.png](../img/module/repeatedly.png)
+
+咦？不是说 require 会读入并执行 js 文件吗？<br>
+怎么就执行了一次 module2.js 呢 <br>
+
+实际上：
+
+> 在第一次使用 require 加载模块后，这个被加载的模块的 module 属性(对应前面的 <a href="#moduleObj" >module 对象</a>)，就被缓存了起来；<br>
+> 在缓存后，require 就会返回这个缓存中的模块的 module.exports 属性(是否验证了**module.exports 始终作为一个模块的输出接口**这一说法)；<br>
+> 如果后续还有 require 加载相同的模块(比如 module2)，那么 require 将不会再重新读入且执行那个模块，而是直接将缓存中的对应的模块的 **module.exports** 属性返回；<br>
+> 对于当前模块来说，无论加载多少次，无论使用什么变量(m2/m3/m4)去接收 require 的返回值，都只不过是引用缓存中的模块对象而已；<br>
 
 #### 小结
 

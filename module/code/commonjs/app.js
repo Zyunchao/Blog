@@ -20,9 +20,24 @@
  * 
  */
 
-const m1 = require('./modules/module1')
+// const m1 = require('./modules/module1')
 //  clearCache('./modules/module1')
+
+// console.log('app.js start：', new Date().getTime());
+
+
 const m2 = require('./modules/module2')
+// console.log('第一次加载 module2', new Date().getTime());
+
+const m3 = require('./modules/module2')
+// console.log('第二次加载 module2', new Date().getTime());
+
+const m4 = require('./modules/module2')
+// console.log('第三次加载 module2', new Date().getTime());
+
+console.log(m2.quote === m3);
+
+
 
 // m1.person.name = 'Lyy'
 
@@ -37,3 +52,8 @@ function clearCache(path) {
     path = require.resolve(path)
     delete require.cache[path]
 }
+
+// console.log('m2：', m2);
+// console.log('m2.quote：', m2.quote);
+// console.log('m2.quote === m2：', m2.quote === m2); // true
+// console.log('app.js end：', new Date().getTime());
