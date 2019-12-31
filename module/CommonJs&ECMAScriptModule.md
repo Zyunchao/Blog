@@ -181,7 +181,7 @@ import { log } from "@/utils";
 
 ##### module 对象
 
-已知在 node 中，每个文件都是一个独立的模块，那么，这个 “模块” 到底是什么呢？
+已知在 node 中，每个文件都是一个独立的模块，那么，这个 “模块” 到底是什么呢？<br>
 nodejs 官网告诉我们：在每个模块中都有一个名为 module 的自由变量是对表示当前模块的对象的引用。
 
 现在，新建一个 app.js 文件，在里面打印下 module
@@ -194,7 +194,7 @@ node app.js
 
 ![logModule](../img/module/logModuleObj.png)
 
-顺利的话，你应该可以看到类似的输出，没错，module 是一个可访问的对象。
+顺利的话，你应该可以看到类似的输出，没错，module 是一个可访问的对象。<br>
 而这个对象，就是代表了当前文件(模块)的引用。<br>
 现在知道 commonjs 中的模块是什么了吧。
 
@@ -215,7 +215,7 @@ node app.js
 
 在暴露模块时，我们有两种方式来将属性暴露出去：**module.exports 和 exports**
 
-> exports 是一个对于 module.exports 的更简短的引用形式。
+> exports 是一个对于 module.exports 的更简短的引用形式。<br>
 > exports 变量是在模块的文件级作用域内可用的，且在模块执行之前赋值给 module.exports。
 
 **实际上：**
