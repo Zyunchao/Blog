@@ -541,8 +541,8 @@ function clearCache(path) {
 
 ## 参考文章
 
-[前端模块化详解(完整版)](https://juejin.im/post/5c17ad756fb9a049ff4e0a62)
-[前端模块化的前世今生](https://www.cnblogs.com/scq000/p/10647128.html)
-[浅谈前端工程化](https://www.cnblogs.com/onebox/p/9570518.html)
-[NodeJs - Module](http://nodejs.cn/api/modules.html)
+[前端模块化详解(完整版)](https://juejin.im/post/5c17ad756fb9a049ff4e0a62)<br>
+[前端模块化的前世今生](https://www.cnblogs.com/scq000/p/10647128.html)<br>
+[浅谈前端工程化](https://www.cnblogs.com/onebox/p/9570518.html)<br>
+[NodeJs - Module](http://nodejs.cn/api/modules.html)<br>
 [ES6 - Module](http://es6.ruanyifeng.com/#docs/module)
