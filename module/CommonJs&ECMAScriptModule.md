@@ -537,6 +537,8 @@ function clearCache(path) {
 太多了，累死了 :fearful::fearful::fearful:
 估计也没人会认真看到这，先溜了，明年再继续写。。。
 
+新年快乐！新年快乐！新年快乐！
+
 ## 参考文章
 
 [前端模块化详解(完整版)](https://juejin.im/post/5c17ad756fb9a049ff4e0a62)
