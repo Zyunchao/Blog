@@ -1,15 +1,34 @@
-# 熟悉而陌生的模块化
+# 熟悉而陌生的模块化（全面剖析 CommonJs 和 ES6Module）
 
 ![zhuantou](../img/module/zhuantou.jpg)
 
 ## 前言
 
+:speech_balloon: “ 来了吗 ”
+:speech_balloon: “ 来了，来了 ”
+:running::running::running::running::running::running::running::running::running::running::dash:
+
 各位看官姥爷好，今天是 2019 年 12 月 31 日了，2019 年的最后一天了。<br>
 马上 2020 年了，先在这祝各位看官姥爷 **新年快乐!!!**<br>
-先放挂小鞭，请各位 :hear_no_evil: <br>
+先放鞭炮，请各位 :hear_no_evil::hear_no_evil::hear_no_evil: <br>
+:collision::collision::collision::collision::collision::collision::collision:<br>
+:tada::tada::tada:<br>
+好:clap::clap::clap:<br>
 
+---
 
-本文主要内容是用来分析 **CommonJs 规范** 和 **ES6Moudle** 两个模块化方式的，对于其他的模块化方式本文未做分析。
+21 世纪 20 年代了，还傻傻分不清模块化吗？<br>
+面试官问你对模块化的理解，心里知道那就是模块化，却不知道该怎么回答？<br>
+面试官问你 AMD、CMD、UMD、CommonJs 一脸蒙圈？<br>
+CommonJs 和 ES6 Module 的区别又是什么呢？<br>
+
+别着急，你想知道的不想知道的，你知道的不知道的，你知不知道的，本文都（bu yi ding）有。:see_no_evil::see_no_evil::see_no_evil:
+
+**请注意：** 本文篇幅较长，如有兴趣，结合代码食用更佳，还请跟随文章代码敲一敲。
+
+**耐得住寂寞，才能守得住繁华。**
+
+**请知悉：** 本文主要内容是用来分析 **CommonJs 规范** 和 **ES6Moudle** 两个模块化方式的，对于其他的模块化方式本文未做分析。
 
 在本文，你能够收获到：
 
@@ -20,9 +39,8 @@
   - <a href="#exportsModule">暴露模块的方式与机制</a>
   - <a href="#requireModule">加载模块的方式与机制</a>
 - 系统的了解 ECMAScript Module
-- 两者的对比
 
-耐得住寂寞，才能守得住繁华。
+---
 
 ## 正文开始
 
@@ -479,7 +497,15 @@ console.log(m4 === moduleCache.exports); // true
 ```
 
 > 当我们直接获取 require.cache 对象中的 module2 的属性后，将它的 exports 属性，与 require 加载的模块比较，发现就是全等的；<br>
-> 这样一来，是不是就明白了这个缓存的机制了呢。
+> 这样一来，是不是就明白了这个缓存的机制了呢。<br>
+> 如果想要让模块文件再次执行，那就在加载模块前清除掉缓存就可以了（删除掉 require.cache 中代表模块的属性即可）；
+
+```javascript
+function clearCache(path) {
+  path = require.resolve(path);
+  delete require.cache[path];
+}
+```
 
 在 app 模块中，大概就像下图这样：<br>
 ![CommonJSContent.png](../img/module/CommonJSContent.png)
@@ -499,3 +525,22 @@ console.log(m4 === moduleCache.exports); // true
 - 它们两个在最初时指向同一个地址
 - 改变其中任意一个，都会使 exports 和 moudle.exports 断链
 - 最终暴露出去的接口，完全取决于 module.exports 属性
+
+5）加载模块使用 require 方法；<br>
+6）加载模块时会将被加载模块的 module 对象缓存在当前模块中的 require.cache 中；<br>
+7）正式因为加载的缓存机制，加载过后的模块不能实时获取模块内部的数据。<br>
+
+## ES6Module
+
+我的妈耶，光一个 CommonJs 剖析就写了这么多，有点出乎意料，有点蒙圈。我需要整理一下思绪，再整理 es6 的 module。
+
+太多了，累死了 :fearful::fearful::fearful:
+估计也没人会认真看到这，先溜了，明年再继续写。。。
+
+## 参考文章
+
+[前端模块化详解(完整版)](https://juejin.im/post/5c17ad756fb9a049ff4e0a62)
+[前端模块化的前世今生](https://www.cnblogs.com/scq000/p/10647128.html)
+[浅谈前端工程化](https://www.cnblogs.com/onebox/p/9570518.html)
+[NodeJs - Module](http://nodejs.cn/api/modules.html)
+[ES6 - Module](http://es6.ruanyifeng.com/#docs/module)
