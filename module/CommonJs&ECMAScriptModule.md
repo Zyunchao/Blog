@@ -11,9 +11,9 @@
 - <a href="#project">前端工程化的概念</a>
 - <a href="#module">模块化的概念、优点</a>
 - 系统的了解 CommonJs 规范
-  - <a href="#moduleObj">CommonJs模块的本质</a>
-  - <a href="#exports">暴露模块的机制</a>
-  - <a href="#require">加载模块的机制</a>
+  - <a href="#moduleObj">CommonJs 模块的本质</a>
+  - <a href="#exportsModule">暴露模块的机制</a>
+  - <a href="#requireModule">加载模块的机制</a>
 - 系统的了解 ECMAScript Module
 - 两者的对比
 
@@ -156,7 +156,8 @@ import { log } from "@/utils";
 
 随着 Javasript 应用进军服务器端，业界急需一种标准的模块化解决方案，于是，CommonJS 应运而生。这是一种被广泛使用的 Javascript 模块化规范，大家最熟悉的 Node.js 应用中就是采用这个规范。
 
-在 Node.js 模块系统中，每个文件都被视为一个独立的模块。模块有自己的作用域，一个模块内部所有的变量、函数、类 都是私有的，模块之间不能直接访问模块内部。**在服务器端，模块的加载是运行时同步加载的；在浏览器端，模块需要提前编译打包处理。**
+在 Node.js 模块系统中，每个文件都被视为一个独立的模块。模块有自己的作用域，一个模块内部所有的变量、函数、类 都是私有的，模块之间不能直接访问模块内部。<br>
+**在服务器端，模块的加载是运行时同步加载的；在浏览器端，模块需要提前编译打包处理。**
 
 ### 2. 基本语法
 
@@ -178,14 +179,14 @@ import { log } from "@/utils";
 
 ### 4. 分析
 
-好，我们大致了解了下 CommonJs，现在让我们一步步分析
+好，我们大致了解了下 CommonJs，现在让我们逐步分析
 
 #### <a name="moduleObj" style="color:#000;">4.1 module 对象</a>
 
 已知在 node 中，每个文件都是一个独立的模块，那么，这个 “模块” 到底是什么呢？<br>
 nodejs 官网告诉我们：**在每个模块中都有一个名为 module 的自由变量是对表示当前模块的对象的引用**。
 
-现在，新建一个 app.js 文件，在里面打印下 module
+现在，新建一个 app.js 文件，在里面尝试打印下 module
 
 ```javascript
 console.log(module);
@@ -212,7 +213,7 @@ node app.js
 - **children：** 被该模块引用的模块对象。
 - **paths：** 模块的搜索路径。
 
-#### <a name="exports" style="color:#000;">4.2 暴露模块</a>
+#### <a name="exportsModule" style="color:#000;">4.2 暴露模块</a>
 
 在暴露模块时，我们有两种方式来将属性暴露出去：**module.exports 和 exports**
 
@@ -316,6 +317,13 @@ module.exports = exports = {
 
 console.log("module.exports === exports：", module.exports === exports); // true
 ```
+
+#### <a name="requireModule" style="color:#000;">4.3 加载模块</a>
+
+在进一步了解模块的加载机制前，我们需要先了解下模块的作用域。 <br>
+在模块作用域中，有若干个 node 给我们预置的变量，其中就包括前面说的 module 对象、exports 引用，除了这两个，还有其他的变量或方法供我们使用：
+
+- \_\_dirname
 
 #### 小结
 
