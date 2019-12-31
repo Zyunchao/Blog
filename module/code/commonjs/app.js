@@ -25,17 +25,31 @@
 
 // console.log('app.js start：', new Date().getTime());
 
-
 const m2 = require('./modules/module2')
 // console.log('第一次加载 module2', new Date().getTime());
 
+// clearCache('./modules/module2')
 const m3 = require('./modules/module2')
 // console.log('第二次加载 module2', new Date().getTime());
 
 const m4 = require('./modules/module2')
 // console.log('第三次加载 module2', new Date().getTime());
 
-console.log(m2.quote === m3);
+// console.log(require.cache);
+
+const name = require.resolve('./modules/module2')
+const moduleCache = require.cache[name]
+
+console.log(m2 === moduleCache.exports); // true
+console.log(m3 === moduleCache.exports); // true
+console.log(m4 === moduleCache.exports); // true
+
+
+
+// console.log(m2.quote === m3);
+// console.log(m2 === m3);
+// console.log(m2 === m4);
+
 
 
 

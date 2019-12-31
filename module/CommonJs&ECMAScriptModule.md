@@ -4,6 +4,11 @@
 
 ## 前言
 
+各位看官姥爷好，今天是 2019 年 12 月 31 日了，2019 年的最后一天了。<br>
+马上 2020 年了，先在这祝各位看官姥爷 **新年快乐!!!**<br>
+先放挂小鞭，请各位 :hear_no_evil: <br>
+
+
 本文主要内容是用来分析 **CommonJs 规范** 和 **ES6Moudle** 两个模块化方式的，对于其他的模块化方式本文未做分析。
 
 在本文，你能够收获到：
@@ -374,14 +379,14 @@ console.log("app.js end：", new Date().getTime());
 
 ##### 解析加载流程
 
-1）在 app.js 开始部分我们打印了一个开始的时间戳，最开始输出的也是这一个
-2）代码遇到 require，读入并执行 module2.js
-3）在 module2.js 中打印了 module2 开始的时间戳
-4）在 module2 中，暴露了一个 person 对象，及一个 module.exports 的引用
-5）module2.js 执行完，输出最后一条语句的时间戳
-6）执行流返回 app.js，定义的 m2 变量接收 require() 调用的返回值
-7）输出 m2 及 m2.quote 属性
-8）发现 m2 和 m2.quote 是相等呢，那么是不是可以证明 require 返回的就是 **模块下的 module.exports 属性呢**
+1）在 app.js 开始部分我们打印了一个开始的时间戳，最开始输出的也是这一个<br>
+2）代码遇到 require，读入并执行 module2.js<br>
+3）在 module2.js 中打印了 module2 开始的时间戳<br>
+4）在 module2 中，暴露了一个 person 对象，及一个 module.exports 的引用<br>
+5）module2.js 执行完，输出最后一条语句的时间戳<br>
+6）执行流返回 app.js，定义的 m2 变量接收 require() 调用的返回值<br>
+7）输出 m2 及 m2.quote 属性<br>
+8）发现 m2 和 m2.quote 是相等呢，那么是不是可以证明 require 返回的就是 **模块下的 module.exports 属性呢**<br>
 9）最后输出 app.js 执行完毕的时间戳，其实我们在上面就已经能看出，在执行完 module2.js 后才返回继续执行 app.js，是不是就已经证明了 **require() 是同步读入并执行的**呢。
 
 ##### 加载缓存
@@ -411,16 +416,83 @@ result：<br>
 
 实际上：
 
-> 在第一次使用 require 加载模块后，这个被加载的模块的 module 属性(对应前面的 <a href="#moduleObj" >module 对象</a>)，就被缓存了起来；<br>
-> 在缓存后，require 就会返回这个缓存中的模块的 module.exports 属性(是否验证了**module.exports 始终作为一个模块的输出接口**这一说法)；<br>
-> 如果后续还有 require 加载相同的模块(比如 module2)，那么 require 将不会再重新读入且执行那个模块，而是直接将缓存中的对应的模块的 **module.exports** 属性返回；<br>
-> 对于当前模块来说，无论加载多少次，无论使用什么变量(m2/m3/m4)去接收 require 的返回值，都只不过是引用缓存中的模块对象而已；<br>
+> 在第一次使用 require 加载模块后，这个被加载的模块的 module 属性(对应前面的 <a href="#moduleObj" >module 对象</a>)，就被缓存了起来；
+>
+> 在缓存后，require 就会返回这个缓存中的模块的 module.exports 属性(是否验证了**module.exports 始终作为一个模块的输出接口**这一说法)；
+>
+> 如果后续还有 require 加载相同的模块(比如 module2)，那么 require 将不会再重新读入且执行那个模块，而是直接将缓存中的对应的模块的 **module.exports** 属性返回；
+>
+> 对于当前模块来说，无论加载多少次，无论使用什么变量(m2/m3/m4)去接收 require 的返回值，都只不过是引用缓存中的模块对象的 exports 属性而已；
+
+验证：
+
+```javascript
+// app.js
+
+const m2 = require("./modules/module2");
+const m3 = require("./modules/module2");
+const m4 = require("./modules/module2");
+
+console.log(m2 === m3); // true
+console.log(m2 === m4); // true
+```
+
+##### requer.cache
+
+在 app.js 中尝试打印 require.cache
+
+```javascript
+// app.js
+
+const m2 = require("./modules/module2");
+const m3 = require("./modules/module2");
+const m4 = require("./modules/module2");
+console.log(require.cache);
+```
+
+result: <br>
+![cacheObj](../img/module/cacheObj.png)
+
+虽然我们不能够明确的知道这个到底输出的是个什么东西，不过看这个结构也能猜个七七八八了
+
+> 我们可以将 require.cache 看做一个对象，缓存对象；<br>
+> 看这个对象的格式，**key** 应该是某些模块的完整路径及模块名字，**value** 应该是对应模块的<a href="#moduleObj" >module 对象</a>；
+> 第一个属性是当前模块的 <a href="#moduleObj" >module 对象</a>；<br>
+> 其他的属性应该是加载的其他模块的 <a href="#moduleObj" >module 对象</a>；<br>
+> 不难看出，require 按照规则，返回的就是这个对象下的某个字段(某个<a href="#moduleObj" >module 对象</a>)下的 `exports` 属性；
+
+我们可以看下代码：
+
+```javascript
+// app.js
+
+const m2 = require("./modules/module2");
+const m3 = require("./modules/module2");
+const m4 = require("./modules/module2");
+
+const name = require.resolve("./modules/module2");
+const moduleCache = require.cache[name];
+
+console.log(m2 === moduleCache.exports); // true
+console.log(m3 === moduleCache.exports); // true
+console.log(m4 === moduleCache.exports); // true
+```
+
+> 当我们直接获取 require.cache 对象中的 module2 的属性后，将它的 exports 属性，与 require 加载的模块比较，发现就是全等的；<br>
+> 这样一来，是不是就明白了这个缓存的机制了呢。
+
+在 app 模块中，大概就像下图这样：<br>
+![CommonJSContent.png](../img/module/CommonJSContent.png)
+
+**【注意：】**
+如果你能弄明白这个加载的缓存机制，也就能够明白为什么 commonjs 中加载的模块为什么不能实时响应模块内部数据的变化了。
+**因为模块加载的是被加载模块的一个缓存副本，并不能实时的响应模块内部的数据的变化**
 
 #### 小结
 
-1）在 node 中，每个文件都是独立的模块；
-2）在每个模块中，都有一个名为 module 的自由变量，用来表示当前模块的引用；
-3）module 对象下面的 exports 属性是最终引用的关键属性
+1）在 node 中，每个文件都是独立的模块；<br>
+2）在每个模块中，都有一个名为 module 的自由变量，用来表示当前模块的引用；<br>
+3）module 对象下面的 exports 属性是最终引用的关键属性<br>
 4）暴露模块有两种方式，module.exports && exports
 
 - exports 是 module.exports 的简写
