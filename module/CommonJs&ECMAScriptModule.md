@@ -2,19 +2,20 @@
 
 ![zhuantou](../img/module/zhuantou.jpg)
 
-[TOC]
-
 ## 前言
 
 本文主要内容是用来分析 **CommonJs 规范** 和 **ES6Moudle** 两个模块化方式的，对于其他的模块化方式本文未做分析。
 
-<!-- 在本文，你能够收获到：
+在本文，希望你能够收获到：
 
 - <a href="#project">前端工程化的概念</a>
 - <a href="#module">模块化的概念、优点</a>
 - 系统的了解 CommonJs 规范
+  - <a href="#moduleObj">CommonJs模块的本质</a>
+  - <a href="#exports">暴露模块的机制</a>
+  - <a href="#require">加载模块的机制</a>
 - 系统的了解 ECMAScript Module
-- 两者的对比 -->
+- 两者的对比
 
 ## 正文开始
 
@@ -50,7 +51,7 @@ import { log } from "@/utils";
 
 呐，这些都是你日常用到，再熟悉不过的开发方式了对吧。
 
-## 工程化
+## <a name="project" style="color:#000;">工程化</a>
 
 ![gch](../img/module/lou.jpg)
 
@@ -72,7 +73,7 @@ import { log } from "@/utils";
 
 **是不是有点跑题了呢，本文主要目的是说模块化的啊，我觉得工程化还是有必要放在模块化之前提一下的**
 
-## 模块化
+## <a name="module" style="color:#000;">模块化</a>
 
 我们已经意识到了前端的 web 程序越来越复杂，也默转潜移的身处于前端工程化的潮流中，是否有种 “初闻不知曲中意，再听已是曲中人” 的意思了呢。
 
@@ -179,12 +180,10 @@ import { log } from "@/utils";
 
 好，我们大致了解了下 CommonJs，现在让我们一步步分析
 
-#### 4.1 暴露模块
-
-##### module 对象
+#### <a name="moduleObj" style="color:#000;">4.1 module 对象</a>
 
 已知在 node 中，每个文件都是一个独立的模块，那么，这个 “模块” 到底是什么呢？<br>
-nodejs 官网告诉我们：在每个模块中都有一个名为 module 的自由变量是对表示当前模块的对象的引用。
+nodejs 官网告诉我们：**在每个模块中都有一个名为 module 的自由变量是对表示当前模块的对象的引用**。
 
 现在，新建一个 app.js 文件，在里面打印下 module
 
@@ -213,7 +212,7 @@ node app.js
 - **children：** 被该模块引用的模块对象。
 - **paths：** 模块的搜索路径。
 
-##### module.exports && exports
+#### <a name="exports" style="color:#000;">4.2 暴露模块</a>
 
 在暴露模块时，我们有两种方式来将属性暴露出去：**module.exports 和 exports**
 
@@ -302,7 +301,7 @@ console.log("module1：", module);
 
 ![resetMEx.png](../img/module/resetMEx.png)
 
-> 同样的，exports 与 module.exports 不再全等；在这一步的情况下，exports 还指向旧的 moudle.exports 指向的对象，并未自动的随着 module.exports 的改变而改变；
+> 同样的，exports 与 module.exports 不再全等。在这一步的情况下，exports 还指向旧的 moudle.exports 指向的对象，并未自动的随着 module.exports 的改变而改变；
 >
 > 区别于改变 exports 的引用，直接改变 module.exports 的引用是真实有效的；最终暴露出去的接口，始终取决于 module.exports 的指向。
 
@@ -318,7 +317,7 @@ module.exports = exports = {
 console.log("module.exports === exports：", module.exports === exports); // true
 ```
 
-##### 小结
+#### 小结
 
 1）在 node 中，每个文件都是独立的模块；
 2）在每个模块中，都有一个名为 module 的自由变量，用来表示当前模块的引用；
@@ -327,5 +326,5 @@ console.log("module.exports === exports：", module.exports === exports); // tru
 
 - exports 是 module.exports 的简写
 - 它们两个在最初时指向同一个地址
-- 改变其中任意一个，都会是 exports 和 moudle.exports 断链
+- 改变其中任意一个，都会使 exports 和 moudle.exports 断链
 - 最终暴露出去的接口，完全取决于 module.exports 属性
