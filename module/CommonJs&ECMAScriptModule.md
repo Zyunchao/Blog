@@ -44,6 +44,7 @@ CommonJs 和 ES6 Module 的区别又是什么呢？<br>
   - <a href="#requireModule">加载模块的方式与机制</a>
 - 系统的了解 ECMAScript Module
   - <a href="#es6ImportExport">暴露与加载的机制</a>
+  - <a href="#importTrait">import 执行机制</a>
 
 ---
 
@@ -522,19 +523,19 @@ function clearCache(path) {
 
 ### 小结
 
-1）在 node 中，每个文件都是独立的模块；<br>
-2）在每个模块中，都有一个名为 module 的自由变量，用来表示当前模块的引用；<br>
-3）module 对象下面的 exports 属性是最终引用的关键属性<br>
-4）暴露模块有两种方式，module.exports && exports
+- 在 node 中，每个文件都是独立的模块；
+- 在每个模块中，都有一个名为 module 的自由变量，用来表示当前模块的引用；
+- module 对象下面的 exports 属性是最终引用的关键属性
+- 暴露模块有两种方式，module.exports && exports
 
-- exports 是 module.exports 的简写
-- 它们两个在最初时指向同一个地址
-- 改变其中任意一个，都会使 exports 和 moudle.exports 断链
-- 最终暴露出去的接口，完全取决于 module.exports 属性
+  - exports 是 module.exports 的简写
+  - 它们两个在最初时指向同一个地址
+  - 改变其中任意一个，都会使 exports 和 moudle.exports 断链
+  - 最终暴露出去的接口，完全取决于 module.exports 属性
 
-5）加载模块使用 require 方法；<br>
-6）加载模块时会将被加载模块的 module 对象缓存在当前模块中的 require.cache 中；<br>
-7）正式因为加载的缓存机制，加载过后的模块不能实时获取模块内部的数据。<br>
+- 加载模块使用 require 方法；
+- 加载模块时会将被加载模块的 module 对象缓存在当前模块中的 require.cache 中；
+- 正式因为加载的缓存机制，加载过后的模块不能实时获取模块内部的数据。
 
 ## ES6Module
 
@@ -622,7 +623,7 @@ import { a } from "./xxx.js";
 a = {}; // Syntax Error : 'a' is read-only;
 ```
 
-上面代码中，脚本加载了变量 a，对其重新赋值就会报错，因为 a 是一个只读的接口。
+上面代码中，脚本加载了变量 a，对其重新赋值就会报错，因为 a 是一个只读的接口（是接口，也是变量，接口与变量大概是对等的）。
 
 但是，如果 a 是一个对象，改写 a 的属性是允许的（对象引用地址，可以改写对象的属性，但不能更改对象的引用）。
 
@@ -641,9 +642,189 @@ a.foo = "hello"; // 合法操作
 >
 > 大体意思就是 import 和 export 之间通过接口连接，建立引用关系，a 模块 去获取 b 模块 暴露出来的功能。<br>
 
-大致如下：
+大致如下：(只是帮助理解这个接口，我并不太清楚 js 的底层到底如何去划分的)
 
 ![exportImport.png](../img/module/exportImport.png)
+
+**【注意：】**虽然引用类型数据可以通过地址，可以直接在模块外修改数据，这样一来，其他模块也可以读到改写后的值，这种方式会导致很难查错，建议凡是输入的变量，都当作完全只读，不要轻易改变它的属性。
+
+#### <a name="importTrait" style="color:#000;">4.2 import 特性</a>
+
+##### 提升
+
+import 命令具有提升效果，会提升到整个模块的头部，首先执行（类似于变量提升，原理百度 js 的预编译阶段）
+
+```javascript
+foo();
+
+import { foo } from "my_module";
+```
+
+上面的代码不会报错，因为 import 的执行早于 foo 的调用。这种行为的本质是，import 命令是编译阶段执行的，在代码运行之前。
+
+##### 静态执行
+
+由于 import 是在 预编译阶段执行的，所以不能使用表达式和变量，因为这些只有在代码运行阶段才能得到结果。
+
+```javascript
+// 报错
+import { 'f' + 'oo' } from 'my_module';
+
+// 报错
+let module = 'my_module';
+import { foo } from module;
+
+// 报错
+if (x === 1) {
+  import { foo } from 'module1';
+} else {
+  import { foo } from 'module2';
+}
+```
+
+上面三种写法都会报错，因为它们用到了表达式、变量和 if 结构。在静态分析阶段，这些语法都是没法得到值的。
+
+**【注意：】** CommonJS 模块的 require 命令和 ES6 模块的 import 命令，可以写在同一个模块里面，但是最好不要这样做。因为 import 在静态解析阶段执行，所以它是一个模块之中最早执行的。
+
+##### 执行模块
+
+import 也是会执行所加载的模块的（require 也会执行被加载的模块），因此可以有下面的写法
+
+```javascript
+import "lodash";
+```
+
+上面代码仅仅执行 lodash 模块，但是不输入任何值。
+
+如果多次重复执行同一句 import 语句，那么只会执行一次，而不会执行多次。
+
+```javascript
+import "lodash";
+import "lodash";
+```
+
+##### 试一下
+
+```javascript
+// module1.js
+console.log("module1 start at：", new Date().getTime());
+export let person = {
+  name: "Jack",
+  age: 18,
+  sex: "man"
+};
+console.log("module1 end at：", new Date().getTime());
+
+// app.js
+console.log("app start at ", new Date().getTime());
+import { person } from "./module1.js";
+console.log(person);
+console.log("app end at ", new Date().getTime());
+```
+
+看一下会如何输出
+
+#### 4.3 import()
+
+import 命令会被 JavaScript 引擎静态分析，先于模块内的其他语句执行。所以，下面的代码会报错。
+
+```javascript
+// 报错
+if (x === 2) {
+  import MyModual from "./myModual";
+}
+```
+
+上面代码中，引擎处理 import 语句是在编译时，这时不会去分析或执行 if 语句，所以 import 语句放在 if 代码块之中毫无意义，因此会报语法错误，而不是执行时错误。
+
+也就是说，**import 和 export 命令只能在模块的顶层**，不能在代码块之中（比如，在 if 代码块之中，或在函数之中）。
+
+这样的设计，固然有利于编译器提高效率，但也导致**无法在运行时加载模块**。在语法上，条件加载就不可能实现。如果 import 命令要取代 Node 的 require 方法，这就形成了一个障碍。因为 **require 是运行时加载模块**，import 命令无法取代 require 的动态加载功能。
+
+```javascript
+const path = "./" + fileName;
+const myModual = require(path);
+```
+
+上面的语句就是动态加载，require 到底加载哪一个模块，只有运行时才知道。import 命令做不到这一点。
+
+##### import()函数
+
+ES2020 提案 引入 import()函数，支持动态加载模块。(node v8 还未支持此语法函数，需要使用 babel)
+
+```javascript
+import(specifier);
+```
+
+上面代码中，import 函数的参数 specifier，指定所要加载的模块的位置。import 命令能够接受什么参数，import()函数就能接受什么参数，两者区别主要是后者为**动态加载**。
+
+import()函数可以用在任何地方，不仅仅是模块，非模块的脚本也可以使用。<br>
+它是运行时执行，也就是说，什么时候运行到这一句，就会加载指定的模块。<br>
+另外，import()函数与所加载的模块没有静态连接关系（也就是说，**使用 import() 函数加载的模块下的数据并不是实时的**），这点也是与 import 语句不相同。<br>
+import()类似于 Node 的 require 方法，区别主要是前者是**异步加载**，后者是**同步加载**。
+
+import()加载模块成功以后，这个模块会作为一个对象，**当作 then 方法的参数**。因此，可以使用对象解构赋值的语法，获取输出接口。
+
+### 小结
+
+- 由于历史原因，ES6 JS 终于迎来了语言本身的模块化
+- 暴露模块使用 export 命令
+- 加载模块使用 import 命令
+  - import 命令也会执行模块文件
+- 暴露和加载的本质是 **“接口”**
+  - 输出接口 必须与模块内部变量一一建立对应关系
+  - 加载的接口是只读的，不允许改变
+  - 复杂类型数据，由于接口对接的是引用，故可以改变数据下的字段，但不能修改引用
+- 暴露和加载的关系是 **“引用”**
+  - 加载的数据与被加载模块内的数据是实时的
+- 加载是在 js 预编译阶段完成的
+- import 和 export 命令只能放到模块作用域的顶层，不能放到任何流程语句中，否则会报语法错误
+- 新提出的 import() 函数，能够异步加载模块，可以在执行阶段进行加载模块
+
+## 总结
+
+这是一篇跨年的文章，在 2020-1-2 写完了:clap::clap::clap:<br>
+一篇文章下来，模块化这方面清晰了不少，也总算系统的将 commonjs 和 es6 module 做了比较，收获良多。<br>
+**一份耕耘，一份收获吧** <br>
+文章结尾，将 CommonJs 和 ES6Module 做个对比：
+
+### 相同点
+
+- 都是以一个文件就是一个模块的标准划分模块
+- 模块有单独的作用域，外部不可直接访问模块内部变量，需要暴露出去，以供其他模块操作
+
+### 不同点
+
+- 大环境
+  - CommonJs 并非语言层面的模块化，而是一种社区规范，NodeJs 引用此规范，大多适用于 node 中
+  - ES6Module 是真正语言层面的模块化，是 ECMAScript 提供的，适用于前后端
+- 模块化机制
+  - CommonJs 是 node 环境中，当一个模块化运行完毕后，才能得到这个模块
+  - ES6Module 是在 JS 预编译阶段就确定了模块的依赖关系的，做了静态优化
+- 暴露机制
+  - CommonJs 在模块执行完成后，将模块中的 <a href="#moduleObj" >module 对象</a> 暴露出去
+  - ES6Module 暴露的是与内部变量建立引用关系的接口
+- 加载机制
+  - CommonJs 使用 require 在执行完 js 后，将暴露的 <a href="#moduleObj" >module 对象</a> 缓存在 require.cache 中，并返回这个模块对象的 exports 属性，供当前模块操作，加载了整个模块(包括不必要的地方)
+  - ES6Module 使用 import 在预编译阶段仅会加载模块对应的接口，并不会加载整个模块
+- 访问机制
+  - CommonJs 在加载完模块后，由于是在内部缓存的，所以是不能实时的响应被加载模块内部数据的变化的
+  - ES6Module 由于是输入接口与输出接口的对接，且输出接口与内部建立引用关系，所以主模块能够实时的获取到被加载模块内的数据
+- 加载命令机制
+  - require
+    - 同步的
+    - 在执行阶段才步读入并执行 js 的
+    - 可以放在流程控制语句中
+  - import
+    - 同步的
+    - 在预编译阶段就会执行 js，并对接其输出接口
+    - 不可以放在流程控制语句中，只能放在模块作用域的顶层
+  - import()
+    - 异步的
+    - 可以放到流程控制语句中
+    - 返回一个 Promise
+    - 返回的模块对象以参数的形式返回给 .then
+    - 返回的模块对象，不再与模块内部对接(不再是实时的)
 
 ## 参考文章
 
