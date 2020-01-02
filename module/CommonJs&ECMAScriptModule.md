@@ -22,7 +22,7 @@
 ---
 
 21 世纪 20 年代了，还傻傻分不清模块化吗？<br>
-面试官问你对模块化的理解，心里知道那就是模块化，却不知道该怎么回答？<br>
+面试官问你对模块化的理解，心里明白着，却不知道该怎么回答？<br>
 面试官问你 AMD、CMD、UMD、CommonJs 一脸蒙圈？<br>
 CommonJs 和 ES6 Module 的区别又是什么呢？<br>
 
@@ -43,6 +43,7 @@ CommonJs 和 ES6 Module 的区别又是什么呢？<br>
   - <a href="#exportsModule">暴露模块的方式与机制</a>
   - <a href="#requireModule">加载模块的方式与机制</a>
 - 系统的了解 ECMAScript Module
+  - <a href="#es6ImportExport">暴露与加载的机制</a>
 
 ---
 
@@ -537,12 +538,112 @@ function clearCache(path) {
 
 ## ES6Module
 
-我的妈耶，光一个 CommonJs 剖析就写了这么多，有点出乎意料，有点蒙圈。我需要整理一下思绪，再整理 es6 的 module。
+### 1. 概述
 
-太多了，累死了 :fearful::fearful::fearful:
-估计也没人会认真看到这，先溜了，明年再继续写。。。
+ES6 在语言标准的层面上，实现了模块功能，而且实现得相当简单，完全可以取代 CommonJS 和 AMD 规范，成为浏览器和服务器通用的模块解决方案。
 
-新年快乐！新年快乐！新年快乐！
+ES6 模块的设计思想是尽量的静态化，使得编译时就能确定模块的依赖关系，以及输入和输出的变量。
+CommonJS 和 AMD 模块，都只能在运行时确定这些东西。
+比如，CommonJS 模块就是对象，只有在执行之后才能获取到 <a href="#moduleObj" >module 对象</a>， 加载时必须查找对象属性( module.exports )。
+
+### 2. 基本语法
+
+- 暴露模块
+
+  > export 命令用于规定模块的对外接口
+
+  - export const a = 'value'
+  - export { prop1, prop2, prop3 }
+  - export { prop as changeName }
+
+- 加载模块
+
+  > import 命令用于输入其他模块提供的功能
+
+  - import { prop1, prop2, prop3 } from 'module'
+  - import { prop1 as changeName } from 'module'
+
+### 3. 特点
+
+- ECMAScript 语言标准提供；
+- 一个文件就是一个模块；
+- 静态化，编译时就能确定模块的依赖关系，以及输入和输出的变量；
+- 模块内自动严格模式；
+- 加载是值的引用，可以实时拿到模块的数据；
+- 前后端都适用。
+
+### 4. 分析
+
+import 和 export 是 ES6 语言本身提供给我们模块化的命令，可以说是 关键字。
+
+#### <a name="es6ImportExport" style="color:#000;">4.1 机制，接口</a>
+
+##### 暴露
+
+export 命令规定的是**对外的接口**，必须与模块内部的变量建立一一对应关系。
+
+```javascript
+export 1 // 报错
+
+const m = 2
+export m // 报错
+```
+
+上面两种写法都会报错，因为没有提供对外的接口。第一种写法直接输出 1，第二种写法通过变量 m，还是直接输出 1。1 只是一个值，不是接口。
+
+正确的写法是下面这样。
+
+```javascript
+// 写法一
+export var m = 1;
+
+// 写法二
+var m = 1;
+export { m };
+
+// 写法三
+var n = 1;
+export { n as m };
+```
+
+上面三种写法都是正确的，规定了对外的接口 m。其他脚本可以通过这个接口，取到值 1。它们的实质是，在接口名与模块内部变量之间，建立了一一对应的关系。
+
+另外，**export 语句输出的接口**，与其对应的值是动态绑定关系，即通过该接口，可以取到模块内部实时的值。
+
+##### 加载
+
+使用 export 命令定义了模块的对外接口以后，其他 JS 文件就可以通过 import 命令加载这个模块。
+
+import 命令输入的变量都是只读的，因为它的**本质是输入接口**。也就是说，不允许在加载模块的脚本里面，改写接口。
+
+```javascript
+import { a } from "./xxx.js";
+
+a = {}; // Syntax Error : 'a' is read-only;
+```
+
+上面代码中，脚本加载了变量 a，对其重新赋值就会报错，因为 a 是一个只读的接口。
+
+但是，如果 a 是一个对象，改写 a 的属性是允许的（对象引用地址，可以改写对象的属性，但不能更改对象的引用）。
+
+```javascript
+import { a } from "./xxx.js";
+
+a.foo = "hello"; // 合法操作
+```
+
+##### Result
+
+> 对于 export 暴露出去的东西，及 import 加载的东西，应该怎么解读？<br>
+>
+> export 输出接口，这个输出接口与模块内部变量、函数或类，建立引用关系，通过这个**接口**可以实时的获取到模块内的数据；<br>
+> import 输入接口，import 命令在模块内创建输入接口，将被加载模块中同样名字的 "输出接口" (**注意：是输出接口**不是内部变量) 对接，这样一来主模块中就可以根据 "接口" 建立的连接，去访问被加载模块中的变量、函数或类。由于是引用关系，所以拿到的数据是实时的；
+>
+> 大体意思就是 import 和 export 之间通过接口连接，建立引用关系，a 模块 去获取 b 模块 暴露出来的功能。<br>
+
+大致如下：
+
+![exportImport.png](../img/module/exportImport.png)
 
 ## 参考文章
 
