@@ -25,7 +25,7 @@ jobs:
             - name: Deploy to GitHub Pages
               uses: peaceiris/actions-gh-pages@v3
               with:
-                  github_token: ${{ secrets.MY_PERSONAL_TOKEN }}
+                  personal_token: ${{ secrets.MY_PERSONAL_TOKEN }} # 使用你的个人访问令牌
                   publish_dir: ./.vitepress/dist # 指向你的构建输出目录
                   publish_branch: main # 目标仓库的分支
-                  external_repository: https://github.com/Zyunchao/zyunchao.github.io.git # 目标仓库的完整地址
+                  external_repository: Zyunchao/zyunchao.github.io # 目标仓库的地址（不需要完整的 URL）
