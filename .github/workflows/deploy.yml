@@ -16,24 +16,26 @@ jobs:
             - name: 设置 Node.js 缓存目录
               id: cache-setup
               run: |
-                  echo "NODE_CACHE_DIR=$(npm config get cache)" >> $GITHUB_ENV
-                  echo "PNPM_STORE_DIR=$(pnpm store path)" >> $GITHUB_ENV
+                echo "NODE_CACHE_DIR=$(npm config get cache)" >> $GITHUB_ENV
+                echo "PNPM_STORE_DIR=$(pnpm store path)" >> $GITHUB_ENV
+                echo "::set-output name=node_cache_dir::$(npm config get cache)"
+                echo "::set-output name=pnpm_store_dir::$(pnpm store path)"
 
             - name: 缓存 pnpm 缓存
               uses: actions/cache@v3
               with:
-                  path: ${{ env.PNPM_STORE_DIR }}
+                  path: ${{ steps.cache-setup.outputs.pnpm_store_dir }}
                   key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: |
-                      ${{ runner.os }}-pnpm-store-
+                    ${{ runner.os }}-pnpm-store-
 
             - name: 缓存 Node.js 模块
               uses: actions/cache@v3
               with:
-                  path: ${{ env.NODE_CACHE_DIR }}
+                  path: ${{ steps.cache-setup.outputs.node_cache_dir }}
                   key: ${{ runner.os }}-node-${{ hashFiles('**/pnpm-lock.yaml') }}
                   restore-keys: |
-                      ${{ runner.os }}-node-
+                    ${{ runner.os }}-node-
 
             - name: 安装 pnpm
               run: npm install -g pnpm
