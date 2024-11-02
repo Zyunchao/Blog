@@ -1,0 +1,26 @@
+name: Deploy to GitHub Pages
+
+on:
+    push:
+        branches:
+            - master # 或你的主分支
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Build project
+              run: |
+                  # 在这里添加构建项目的命令，比如 npm run build
+                  pnpm run docs:build
+
+            - name: Deploy to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v3
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./.vitepress/dist
+                  publish_branch: master # 或者是 gh-pages
+                  publish_repo: https://github.com/Zyunchao/zyunchao.github.io.git
