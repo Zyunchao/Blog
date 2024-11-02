@@ -28,4 +28,4 @@ jobs:
                   github_token: ${{ secrets.GITHUB_TOKEN }}
                   publish_dir: ./.vitepress/dist # 指向你的构建输出目录
                   publish_branch: main # 目标仓库的分支
-                  publish_repo: Zyunchao/zyunchao.github.io # 目标仓库的完整地址
+                  external_repository: Zyunchao/zyunchao.github.io # 目标仓库的完整地址
