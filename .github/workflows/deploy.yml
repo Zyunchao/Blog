@@ -1,4 +1,4 @@
-name: Deploy Documentation to GitHub Pages
+name: 部署文档到 GitHub Pages
 
 on:
     push:
@@ -10,19 +10,40 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - name: Checkout code
+            - name: 检出代码
               uses: actions/checkout@v2
 
-            - name: Install pnpm
+            - name: 设置 Node.js 缓存目录
+              run: |
+                  echo "NODE_CACHE_DIR=$(npm config get cache)" >> $GITHUB_ENV
+                  echo "PNPM_STORE_DIR=$(pnpm store path)" >> $GITHUB_ENV
+
+            - name: 缓存 pnpm 缓存
+              uses: actions/cache@v3
+              with:
+                  path: ${{ env.PNPM_STORE_DIR }}
+                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-pnpm-store-
+
+            - name: 缓存 Node.js 模块
+              uses: actions/cache@v3
+              with:
+                  path: ${{ env.NODE_CACHE_DIR }}
+                  key: ${{ runner.os }}-node-${{ hashFiles('**/pnpm-lock.yaml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-
+
+            - name: 安装 pnpm
               run: npm install -g pnpm
 
-            - name: Install dependencies
+            - name: 安装依赖
               run: pnpm install
 
-            - name: Build documentation
+            - name: 构建文档
               run: pnpm run docs:build # 使用你的构建命令
 
-            - name: Deploy to GitHub Pages
+            - name: 部署到 GitHub Pages
               uses: peaceiris/actions-gh-pages@v3
               with:
                   personal_token: ${{ secrets.MY_PERSONAL_TOKEN }} # 使用你的个人访问令牌
