@@ -2,6 +2,7 @@
     <div v-if="frontmatter.home">
         <h1>{{ site.title }}</h1>
         <p>{{ site.description }}</p>
+        测试的 测试的 测试的 测试的 测试的
         <ul></ul>
     </div>
     <div v-else>
