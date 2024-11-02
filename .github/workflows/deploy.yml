@@ -11,7 +11,11 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
-
+            
+            - name: install
+              run: |
+                  pnpm i
+              
             - name: Build project
               run: |
                   # 在这里添加构建项目的命令，比如 npm run build
